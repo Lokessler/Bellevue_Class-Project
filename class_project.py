@@ -241,8 +241,10 @@ def init_dialog():
                 return lock
             # let user search by ZIP with '1' or by city with '2'
             elif i_o == 1 or i_o == 2:
-                lock = get_full_forecast(i_o)
-                return lock
+                if get_full_forecast(i_o):
+                    return True
+                else:
+                    lock = True
             else:
                 print('\nInput number 1, 2, or 3!')
         except ValueError:
