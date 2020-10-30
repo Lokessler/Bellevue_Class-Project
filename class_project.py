@@ -2,214 +2,19 @@
 
 '''
 Program:        Python Weather Forecast Search
-Version:        4.0
+Version:        6.0
 Author:         Logan Kessler
-Date:           08-30-2020
-Description:    I'll add later...
+Date:           10-13-2020
+Description:    Connects to openweathermap.org to gather forecast information.
+                User can search for weather forecast by ZIP code or city name.
 '''
 import json                     # for JSON file I/O
 import time                     # for printing at a certain interval
-from datetime import datetime   # convert date and time String
 import requests                 # install via "pip3 install requests"
+from forecast import *
 
-class ForecastCity():
-    """
-    Parent Class for: 'ForecastTemperature', 'ForecastConditions',
-                      'ForecastFull', and ForecastList
-    Base Class with city name, number of weather sets, and forecast time attributes
-    """
-    def __init__(self):
-        """
-        initialize attributes to be empty
-        """
-        self.city_name = ''
-        self.count = 0
-        self.f_time = ''
 
-    # forecast "setter" methods
-    def set_forecast_city(self, city):
-        """
-        Set: self's city name to passed 'city' variable.
-        """
-        self.city_name = str(city)
-    def set_forecast_count(self, count):
-        """
-        Set: self's count to passed 'count' variable.
-        """
-        self.count = int(count)
-    def set_forecast_datetime(self, forecast_time):
-        """
-        Set: JSON derived time String to easier to read time String
-        """
-        # source: https://docs.python.org/3.5/library/datetime.html
-        f_dt = datetime.strptime(forecast_time, "%Y-%m-%d %H:%M:%S")
-        self.f_time = str(f_dt.strftime("%B %d, %Y at %I:%M %p"))
-    def pp_forecast_city_time(self):
-        """
-        Execute: 'pretty print' of ALL 'ForecastCity' Object's attributes
-        """
-        print('+-----------------------------------+')
-        print(pp_tail("%s%s" %('| Weather in ', self.city_name), 37))
-        print(pp_tail("%s%s" %('| On ', self.f_time), 37))
-
-class ForecastTemperature(ForecastCity):
-    """
-    Parent Class: ForecastCity
-    Inherits forecast attributes from 'ForecastCity' Class.
-    Set: current temp, max temp, minimum temp, and "feels like" temp attributes
-    """
-    def __init__(self):
-        """
-        initialize attributes to be empty
-        """
-        super().__init__()
-        self.temp = 0.0
-        self.t_max = 0.0
-        self.t_min = 0.0
-        self.t_fl = 0.0
-
-    def set_temp(self, temperature):
-        """
-        Set: self's temp to passed 'temperature' variable.
-        """
-        self.temp = float(temperature)
-    def set_max_temp(self, max_temperature):
-        """
-        Set: self's max temp to passed 'max_temperature' variable.
-        """
-        self.t_max = float(max_temperature)
-    def set_min_temp(self, min_temperature):
-        """
-        Set: self's minimum temp to passed 'min_temperature' variable.
-        """
-        self.t_min = float(min_temperature)
-    def set_feels_like_temp(self, fl_temperature):
-        """
-        Set: self's feels like temp to passed 'fl_temperature' variable.
-        """
-        self.t_fl = float(fl_temperature)
-    def pp_forecast_temperature(self):
-        """
-        Execute: 'pretty print' of ALL 'ForecastTemperature' Object's attributes
-        """
-        deg = ' degrees'
-        print('+-----------------------------------+')
-        print('|            Temperature            |')
-        print('+-----------------------------------+')
-        print(pp_tail("%s%.2f%s" %('|      Projected: ', self.temp, deg), 37))
-        print(pp_tail("%s%.2f%s" %('|            Max: ', self.t_max, deg), 37))
-        print(pp_tail("%s%.2f%s" %('|        Minimum: ', self.t_min, deg), 37))
-        print(pp_tail("%s%.2f%s" %('|     Feels Like: ', self.t_fl, deg), 37))
-
-class ForecastConditions(ForecastTemperature):
-    """
-    Parent Class: ForecastTemperature
-    Inherits forecast attributes from 'ForecastTemperature' Class.
-    Set: humidity, sky conditions, wind speed, and wind direction attributes
-    """
-    def __init__(self):
-        """
-        initialize attributes to be empty
-        """
-        super().__init__()
-        self.humidity = 0
-        self.sky = ''
-        self.w_speed = 0.0
-        self.w_dir = ''
-    def set_humidity(self, humidity):
-        """
-        Set: self's humidity to passed 'humidity' variable.
-        """
-        self.humidity = int(humidity)
-    def set_sky(self, sky_conditions):
-        """
-        Set: self's sky conditions to passed 'sky_conditions' variable.
-        """
-        self.sky = str(sky_conditions).title()
-    def set_wind_speed(self, wind_speed):
-        """
-        Set: self's wind speed to passed 'wind_speed' variable.
-        """
-        self.w_speed = float(wind_speed)
-    def set_wind_direction(self, wind_dir):
-        """
-        Set: self's wind direction to passed 'wind_dir' variable.
-        Convert: float value of wind heading to N-E-S-W direction of String type.
-        """
-        # sourced data from: www.windfinder.com/wind/windspeed.htm
-        if wind_dir > 0 and wind_dir < 22.5:
-            self.w_dir = 'North'
-        elif wind_dir >= 22.5 and wind_dir < 45:
-            self.w_dir = 'North-Northeast'
-        elif wind_dir >= 45 and wind_dir < 67.5:
-            self.w_dir = 'Northeast'
-        elif wind_dir >= 67.5 and wind_dir < 90:
-            self.w_dir = 'East-Northeast'
-        elif wind_dir >= 90 and wind_dir < 112.5:
-            self.w_dir = 'East'
-        elif wind_dir >= 112.5 and wind_dir < 135:
-            self.w_dir = 'East-Southeast'
-        elif wind_dir >= 135 and wind_dir < 157.5:
-            self.w_dir = 'Southeast'
-        elif wind_dir >= 157.5 and wind_dir < 180:
-            self.w_dir = 'South-Southeast'
-        elif wind_dir >= 180 and wind_dir < 202.5:
-            self.w_dir = 'South'
-        elif wind_dir >= 202.5 and wind_dir < 225:
-            self.w_dir = 'South-Southwest'
-        elif wind_dir >= 225 and wind_dir < 247.5:
-            self.w_dir = 'Southwest'
-        elif wind_dir >= 247.5 and wind_dir < 270:
-            self.w_dir = 'West-Southwest'
-        elif wind_dir >= 270 and wind_dir < 292.5:
-            self.w_dir = 'West'
-        elif wind_dir >= 292.5 and wind_dir < 315:
-            self.w_dir = 'West-Northwest'
-        elif wind_dir >= 315 and wind_dir < 337.5:
-            self.w_dir = 'Northwest'
-        elif wind_dir >= 337.5:
-            self.w_dir = 'North-Northwest'
-
-    def pp_forecast_conditions(self):
-        """
-        Execute: 'pretty print' of ALL 'ForecastConditions' Object's attributes
-        """
-        print('+-----------------------------------+')
-        print('|            Conditions             |')
-        print('+-----------------------------------+')
-        print(pp_tail("%s%d%s" %('|       Humidity: ', self.humidity, '%'), 37))
-        print(pp_tail("%s%.2f%s" %('|     Wind Speed: ', self.w_speed, ' mph'), 37))
-        print(pp_tail("%s%s" %('| Wind Direction: ', self.w_dir), 37))
-        print(pp_tail("%s%s" %('|  Sky Condition: ', self.sky), 37))
-
-class ForecastList():
-    """
-    Parent Class: ForecastCity
-    Set: append 'ForecastCity' or it's child Classes to List
-    """
-    def __init__(self):
-        """
-        initialize attribute to be empty
-        """
-        self.fcast_list = []
-
-    def append_forecast(self, forecast):
-        """
-        Set: appends passed 'forecast' variable to self's forecast List Object.
-        """
-        self.fcast_list.append(forecast)
-
-    def pp_forecast_list(self):
-        """
-        Execute: 'pretty print' of every List Object's 'ForecastCity' attributes.
-        """
-        for fcast in self.fcast_list:
-            fcast.pp_forecast_city_time()
-            fcast.pp_forecast_temperature()
-            fcast.pp_forecast_conditions()
-            print('+-----------------------------------+\n')
-
-def pp_tail(string, max_string_len):
+def pp_str(string, max_string_len):
     """
     Parameters: String Object and max length the String will be padded to.
     Return: String Object padded with Spaces and a Pipe at the end.
@@ -255,13 +60,11 @@ def get_full_forecast(option):
     Parameter: user chosen 'option' of '1' or '2' used to create proper API request.
     Return: True or False based on failed or successful request to API.
     Description: Creates API query based on ZIP code or a cities ID.
-                 Stores successful request into a 'ForecastList' Object.
-                 Prints 'ForecastList' Objects forecast data in 'pretty print'.
+                 Stores successful request into a 'Forecast' Object.
+                 Prints 'Forecast' Object's forecast data in 'pretty print'.
     """
     api_key = '95048d3dbeb334942022d6b1faf18c90'
     url = "https://api.openweathermap.org/data/2.5/forecast"
-    # create empty user-defined 'Forecast_List' Object
-    forecast_list = ForecastList()
 
     # change payload and "search prompt" based on users chosen method of searching
     if option is 1:
@@ -273,7 +76,7 @@ def get_full_forecast(option):
 
     # try/catch block for 'Requests' module
     try:
-        res = requests.get(url, params=payload, timeout=8.0)
+        res = requests.get(url, params=payload, timeout=6.0)
         res.raise_for_status()
     # HTTP Error exception for any invalid 'HTTP codes'
     except requests.HTTPError:
@@ -290,42 +93,9 @@ def get_full_forecast(option):
     if res.ok:
         print('\nSuccessfully connected to OpenWeatherMap.org!\n')
         time.sleep(2)   # sleep to make it appear like works still being done
-        owm_json = res.json()
 
-    city = owm_json['city']['name'] # city name
-    count = owm_json['cnt']         # number of forecast weather sets
-
-    i = 0
-    # parse JSON request to 'Forecast' Object and append to 'ForecastList' Object
-    while i < count:
-        # create user-defined 'ForecastFull' Object
-        fcast = ForecastConditions()
-
-        # set user-defined 'ForecastCity' Object inherited attributes
-        fcast.set_forecast_city(city)
-        fcast.set_forecast_count(count)
-        # set and convert forcast's time String to a 'pretty print' version
-        fcast.set_forecast_datetime(owm_json['list'][i]['dt_txt'])
-
-        # set user-defined 'ForecastTemperature' Object inherited attributes
-        fcast.set_temp(owm_json['list'][i]['main']['temp'])
-        fcast.set_max_temp(owm_json['list'][i]['main']['temp_max'])
-        fcast.set_min_temp(owm_json['list'][i]['main']['temp_min'])
-        fcast.set_feels_like_temp(owm_json['list'][i]['main']['feels_like'])
-
-        # set user-defined 'ForecastConditions' Object inherited attributes
-        fcast.set_humidity(owm_json['list'][i]['main']['humidity'])
-        fcast.set_sky(owm_json['list'][i]['weather'][0]['description'])
-        fcast.set_wind_speed(owm_json['list'][i]['wind']['speed'])
-        # set and convert forecast's wind direction integer to String to N-S-E-W
-        fcast.set_wind_direction(owm_json['list'][i]['wind']['deg'])
-
-        # append 'ForcastFull' Object to 'ForecastList' Object
-        forecast_list.append_forecast(fcast)
-        i += 1
-
-    # call method to 'pretty print' ALL 'ForecastList' Object's data
-    forecast_list.pp_forecast_list()
+    fcast = Forecast()                      # create 'Forecast' Object
+    fcast.parse_forecast_json(res.json())   # parse JSON, store in 'Forecast' Object
     return True
 
 def zip_search():
@@ -392,10 +162,10 @@ def pp_city_chooser(city_list):
             i += 1
             if city['state'] is not "":
                 str0 = "| %d. %s, %s, %s" %(i, city['name'], city['state'], city['country'])
-                print(pp_tail(str0, 31))
+                print(pp_str(str0, 31))
             else:
                 str0 = "| %d. %s, %s" %(i, city['name'], city['country'])
-                print(pp_tail(str0, 31))
+                print(pp_str(str0, 31))
         print('+-----------------------------+')
         try:
             choice = int(input('-->>> '))
